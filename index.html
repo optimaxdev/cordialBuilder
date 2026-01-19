@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cordial Advanced Subject Builder</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --border: #cbd5e1;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --token-bg: #e0e7ff;
+            --token-text: #3730a3;
+            --danger: #ef4444;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        header {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        h1 { font-size: 1.25rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .version-tag { font-size: 0.7rem; background: var(--bg); padding: 2px 8px; border-radius: 4px; color: var(--text-light); }
+
+        .main-col { display: flex; flex-direction: column; gap: 20px; }
+        .sidebar { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        /* Variable Bank */
+        .variable-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .token {
+            background: var(--token-bg);
+            color: var(--token-text);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: grab;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .token:hover { border-color: var(--primary); background: #dbeafe; }
+
+        .fallback-config {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--bg);
+        }
+
+        /* Controls */
+        .toggle-group { display: flex; gap: 10px; align-items: center; }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Logic Blocks */
+        .rule-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #fff;
+        }
+        .rule-card.if-block { border-left: 4px solid var(--primary); }
+        .rule-card.elseif-block { border-left: 4px solid var(--accent-purple); }
+        .rule-card.else-block { border-left: 4px solid var(--text-light); }
+
+        .condition-row {
+            display: grid;
+            grid-template-columns: 80px 140px 120px 1fr 32px;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        .condition-row:first-child .join-select { visibility: hidden; }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .tag-input-mini {
+            width: 80px; 
+            display: inline-block; 
+            height: 28px; 
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        .subject-input-wrapper { margin-top: 12px; position: relative; }
+        .char-count {
+            position: absolute;
+            right: 8px; bottom: -18px;
+            font-size: 0.65rem;
+            color: var(--text-light);
+        }
+        .char-warn { color: var(--danger); font-weight: bold; }
+
+        /* Output */
+        .code-block {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .ab-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+        }
+        .ab-a { background: #dcfce7; color: #166534; }
+        .ab-b { background: #fef2f2; color: #991b1b; }
+
+        .hidden { display: none; }
+        
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: white;
+            transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-outline { color: var(--text); }
+        .btn-sm { padding: 4px 8px; font-size: 0.7rem; }
+        .btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Cordial Builder</h1>
+        <div class="toggle-group">
+            <span class="section-label">A/B Test</span>
+            <label class="switch">
+                <input type="checkbox" id="abToggle">
+                <span class="slider"></span>
+            </label>
+            <span class="section-label" style="margin-left: 10px;">Conditionals</span>
+            <label class="switch">
+                <input type="checkbox" id="logicToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
+
+    <div class="main-col">
+        <!-- Variant A / Main Logic Area -->
+        <div id="variantAContainer">
+            <div class="section-header">
+                <div>
+                    <span class="ab-indicator ab-a" id="abLabelA">Subject A (Main)</span>
+                    <span id="tagAWrapper" class="hidden" style="margin-left: 10px;">
+                        <label class="section-label" style="text-transform:none;">Tag:</label>
+                        <input type="text" id="tagA" value="A" class="tag-input-mini">
+                    </span>
+                </div>
+            </div>
+
+            <div id="simpleModeA" class="card">
+                <div class="subject-input-wrapper">
+                    <textarea id="subjectA" placeholder="Enter subject line..." oninput="updateCharCount(this)"></textarea>
+                    <span class="char-count" id="count-subjectA">0 characters</span>
+                </div>
+            </div>
+
+            <div id="logicModeA" class="hidden">
+                <div id="rulesContainer"></div>
+                <button class="btn btn-outline" onclick="addRuleBlock()">+ Add ELSEIF Block</button>
+                
+                <div class="rule-card else-block" style="margin-top: 16px;">
+                    <div class="section-header" style="margin-bottom: 5px;">
+                        <span class="section-label">ELSE (Fallback)</span>
+                        <span class="version-tag" style="background:#fff; border:1px solid #ddd;">Bypasses A/B Logic</span>
+                    </div>
+                    <div class="subject-input-wrapper">
+                        <textarea id="subjectElse" placeholder="Default subject line..." oninput="updateCharCount(this)"></textarea>
+                        <span class="char-count" id="count-subjectElse">0 characters</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Variant B Area (Only if A/B enabled) -->
+        <div id="variantBContainer" class="hidden">
+            <div class="card" style="border-top: 4px solid var(--danger);">
+                <div class="section-header">
+                    <div>
+                        <span class="ab-indicator ab-b">Subject B</span>
+                        <span style="margin-left: 10px;">
+                            <label class="section-label" style="text-transform:none;">Tag:</label>
+                            <input type="text" id="tagB" value="B" class="tag-input-mini">
+                        </span>
+                    </div>
+                </div>
+                <div class="subject-input-wrapper">
+                    <textarea id="subjectB" placeholder="Enter subject line for Variant B..." oninput="updateCharCount(this)"></textarea>
+                    <span class="char-count" id="count-subjectB">0 characters</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+
+        <div class="card">
+            <span class="section-label">Contact Attributes</span>
+            <div class="variable-bank" id="variableBank"></div>
+            
+            <div class="fallback-config">
+                <span class="section-label">Insertion Settings</span>
+                <div style="margin-top: 8px;">
+                    <label style="font-size: 0.7rem; color: var(--text-light);">Default Fallback Value:</label>
+                    <input type="text" id="globalFallback" placeholder="e.g. there" value="there" style="margin-top: 4px;">
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="card">
+            <button class="btn btn-primary" id="generateBtn" style="width: 100%; padding: 12px; margin-bottom: 12px;">Generate Smarty Code</button>
+            <span class="section-label">Smarty Preview</span>
+            <div class="code-block" id="outputPreview">// Code will appear here...</div>
+            <button class="btn btn-outline" id="copyBtn" style="width: 100%; margin-top: 12px;">Copy to Clipboard</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const contactAttributes = ["firstname","lastname","gender","is_loyalty","affinity_brand","affinity_budget_range","affinity_category","affinity_category_url","affinity_frame_color","affinity_frame_style","affinity_lens_type","affinity_product_name","affinity_shape"];
+    
+    // State
+    let activeInput = null;
+    let rules = [
+        { id: 1, type: 'IF', conditions: [{ id: 101, join: 'AND', attr: contactAttributes[0], op: 'not empty', val: '' }], subject: '' }
+    ];
+
+    function init() {
+        const bank = document.getElementById('variableBank');
+        contactAttributes.forEach(attr => {
+            const token = document.createElement('div');
+            token.className = 'token';
+            token.textContent = attr;
+            token.draggable = false;
+            token.onclick = () => insertVariable(attr);
+            token.ondragstart = (e) => e.dataTransfer.setData('text', attr);
+            bank.appendChild(token);
+        });
+
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'TEXTAREA') activeInput = e.target;
+        });
+
+        renderRules();
+        setupToggles();
+    }
+
+    function insertVariable(attr) {
+        if (!activeInput) activeInput = document.getElementById('subjectA');
+        const fallback = document.getElementById('globalFallback').value;
+        const smarty = fallback ? `{$contact.${attr}|default:'${fallback}'}` : `{$contact.${attr}}`;
+        
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        activeInput.value = activeInput.value.substring(0, start) + smarty + activeInput.value.substring(end);
+        activeInput.focus();
+        activeInput.setSelectionRange(start + smarty.length, start + smarty.length);
+        updateCharCount(activeInput);
+    }
+
+    function updateCharCount(el) {
+        const countEl = document.getElementById(`count-${el.id}`);
+        if (!countEl) return;
+        const len = el.value.length;
+        countEl.textContent = `${len} characters`;
+        countEl.className = len > 78 ? 'char-count char-warn' : 'char-count';
+    }
+
+    function renderRules() {
+        const container = document.getElementById('rulesContainer');
+        container.innerHTML = '';
+
+        rules.forEach((rule) => {
+            const card = document.createElement('div');
+            card.className = `rule-card ${rule.type.toLowerCase()}-block`;
+            
+            let conditionsHtml = rule.conditions.map((c, idx) => `
+                <div class="condition-row">
+                    <select class="join-select" onchange="updateCond(${rule.id}, ${c.id}, 'join', this.value)">
+                        <option value="AND" ${c.join === 'AND' ? 'selected' : ''}>AND</option>
+                        <option value="OR" ${c.join === 'OR' ? 'selected' : ''}>OR</option>
+                    </select>
+                    <select onchange="updateCond(${rule.id}, ${c.id}, 'attr', this.value)">
+                        ${contactAttributes.map(a => `<option value="${a}" ${c.attr === a ? 'selected' : ''}>${a}</option>`).join('')}
+                    </select>
+                    <select onchange="updateCond(${rule.id}, ${c.id}, 'op', this.value)">
+                        <option value="not empty" ${c.op === 'not empty' ? 'selected' : ''}>not empty</option>
+                        <option value="equals" ${c.op === 'equals' ? 'selected' : ''}>equals</option>
+                        <option value="not equals" ${c.op === 'not equals' ? 'selected' : ''}>not equals</option>
+                        <option value="in array" ${c.op === 'in array' ? 'selected' : ''}>in array</option>
+                    </select>
+                    <input type="text" placeholder="${c.op === 'in array' ? 'Val1, Val2...' : 'Value...'}" value="${c.val}" 
+                           class="${c.op === 'not empty' ? 'hidden' : ''}" 
+                           oninput="updateCond(${rule.id}, ${c.id}, 'val', this.value)">
+                    <button class="btn btn-danger btn-sm" onclick="removeCond(${rule.id}, ${c.id})" ${rule.conditions.length === 1 ? 'disabled' : ''}>✕</button>
+                </div>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="section-header">
+                    <span class="rule-badge section-label">${rule.type}</span>
+                    <div style="display:flex; gap: 5px;">
+                        <button class="btn btn-outline btn-sm" onclick="addCond(${rule.id})">+ AND/OR</button>
+                        ${rule.type === 'ELSEIF' ? `<button class="btn btn-danger btn-sm" onclick="removeRule(${rule.id})">Remove Block</button>` : ''}
+                    </div>
+                </div>
+                <div class="conditions-list">${conditionsHtml}</div>
+                <div class="subject-input-wrapper">
+                    <textarea id="rule-sub-${rule.id}" placeholder="Subject line for this segment..." oninput="updateRuleSub(${rule.id}, this)">${rule.subject}</textarea>
+                    <span class="char-count" id="count-rule-sub-${rule.id}">${rule.subject.length} characters</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    window.updateCond = (rId, cId, key, val) => {
+        const r = rules.find(r => r.id === rId);
+        const c = r.conditions.find(c => c.id === cId);
+        c[key] = val;
+        if (key === 'op') renderRules();
+    };
+
+    window.addCond = (rId) => {
+        const r = rules.find(r => r.id === rId);
+        r.conditions.push({ id: Date.now(), join: 'AND', attr: contactAttributes[0], op: 'equals', val: '' });
+        renderRules();
+    };
+
+    window.removeCond = (rId, cId) => {
+        const r = rules.find(r => r.id === rId);
+        r.conditions = r.conditions.filter(c => c.id !== cId);
+        renderRules();
+    };
+
+    window.addRuleBlock = () => {
+        rules.push({ 
+            id: Date.now(), 
+            type: 'ELSEIF', 
+            conditions: [{ id: Date.now()+1, join: 'AND', attr: contactAttributes[0], op: 'equals', val: '' }], 
+            subject: '' 
+        });
+        renderRules();
+    };
+
+    window.removeRule = (id) => {
+        rules = rules.filter(r => r.id !== id);
+        renderRules();
+    };
+
+    window.updateRuleSub = (id, el) => {
+        rules.find(r => r.id === id).subject = el.value;
+        updateCharCount(el);
+    };
+
+    // --- Generation Logic ---
+
+    function buildSmartyConditionRow(c) {
+        const attr = `$contact.${c.attr}`;
+        if (c.op === 'not empty') return `not empty(${attr})`;
+        const vals = c.val.split(',').map(v => v.trim()).filter(v => v);
+        if (c.op === 'in array') {
+            const arrayStr = `[${vals.map(v => `'${v}'`).join(',')}]`;
+            return `in_array(${attr}, ${arrayStr})`;
+        }
+        const op = c.op === 'equals' ? 'eq' : 'ne';
+        if (vals.length <= 1) return `${attr} ${op} '${vals[0] || ''}'`;
+        return `(${vals.map(v => `${attr} ${op} '${v}'`).join(' or ')})`;
+    }
+
+    document.getElementById('generateBtn').onclick = () => {
+        const isAB = document.getElementById('abToggle').checked;
+        const isLogic = document.getElementById('logicToggle').checked;
+        const tagA = document.getElementById('tagA').value || 'A';
+        const tagB = document.getElementById('tagB').value || 'B';
+        const subjectB = document.getElementById('subjectB').value;
+        const subjectElse = document.getElementById('subjectElse').value;
+        
+        let finalCode = "";
+
+        if (isAB && isLogic) {
+            finalCode += `{$data.min = 1}\n{$data.max = 2}\n{$data.random = {math equation='rand(min, max)' min=$data.min max=$data.max}}\n\n`;
+            
+            rules.forEach((r, idx) => {
+                const keyword = idx === 0 ? 'if' : 'elseif';
+                let fullCond = "";
+                r.conditions.forEach((c, cIdx) => {
+                    const part = buildSmartyConditionRow(c);
+                    fullCond += (cIdx === 0) ? part : ` ${c.join.toLowerCase()} ${part}`;
+                });
+
+                finalCode += `{${keyword} ${fullCond}}\n`;
+                finalCode += `    {if $data.random == 1}\n`;
+                finalCode += `        {$tag = "${tagA}"} {$utils->addSendTag($tag)}\n`;
+                finalCode += `        {$subject = "${r.subject}"}\n`;
+                finalCode += `    {else}\n`;
+                finalCode += `        {$tag = "${tagB}"} {$utils->addSendTag($tag)}\n`;
+                finalCode += `        {$subject = "${subjectB}"}\n`;
+                finalCode += `    {/if}\n`;
+            });
+
+            finalCode += `{else}\n    {* Fallback skips A/B test and tagging *}\n    {$subject = "${subjectElse}"}\n{/if}`;           
+
+        } else if (isAB) {
+            finalCode += `{$data.min = 1}\n{$data.max = 2}\n{$data.random = {math equation='rand(min, max)' min=$data.min max=$data.max}}\n\n`;
+            finalCode += `{if $data.random == 1}\n    {$tag = "${tagA}"} {$utils->addSendTag($tag)}\n    {$subject = "${document.getElementById('subjectA').value}"}\n`;
+            finalCode += `{else}\n    {$tag = "${tagB}"} {$utils->addSendTag($tag)}\n    {$subject = "${subjectB}"}\n{/if}`;
+        } else if (isLogic) {
+            rules.forEach((r, idx) => {
+                const keyword = idx === 0 ? 'if' : 'elseif';
+                let fullCond = "";
+                r.conditions.forEach((c, cIdx) => {
+                    const part = buildSmartyConditionRow(c);
+                    fullCond += (cIdx === 0) ? part : ` ${c.join.toLowerCase()} ${part}`;
+                });
+                finalCode += `{${keyword} ${fullCond}}\n    {$subject = "${r.subject}"}\n`;
+            });
+            finalCode += `{else}\n    {$subject = "${subjectElse}"}\n{/if}`;
+        } else {
+            finalCode = `{$subject = "${document.getElementById('subjectA').value}"}`;
+        }
+
+        finalCode += `\n{$subject}`
+
+        document.getElementById('outputPreview').textContent = finalCode;
+    };
+
+    function setupToggles() {
+        const abT = document.getElementById('abToggle');
+        const loT = document.getElementById('logicToggle');
+
+        abT.onchange = () => {
+            document.getElementById('variantBContainer').classList.toggle('hidden', !abT.checked);
+            document.getElementById('tagAWrapper').classList.toggle('hidden', !abT.checked);
+            document.getElementById('abLabelA').textContent = abT.checked ? 'Subject A' : 'Main Subject';
+        };
+
+        loT.onchange = () => {
+            document.getElementById('simpleModeA').classList.toggle('hidden', loT.checked);
+            document.getElementById('logicModeA').classList.toggle('hidden', !loT.checked);
+        };
+    }
+
+    document.getElementById('copyBtn').onclick = () => {
+        const text = document.getElementById('outputPreview').textContent;
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy to Clipboard", 2000);
+    };
+
+    init();
+</script>
+</body>
+</html>
